@@ -1,112 +1,85 @@
 #ifndef AssetManager__H
 #define AssetManager__H
 
+#include "AssetArray.h"
+
 #include <unordered_map>
 #include <list>
 #include <cassert>
 #include <memory>
 #include <iostream>
 
-#define MaskStart 28
-
-using AssetID = uint32_t;
-
-class Asset
-{
-public:
-    bool m_IsLoaded = false;
-    const char* m_Path;
-    AssetID m_Id = 0;
-
-    Asset(const char* path) : m_Path(path) {}
-
-    virtual bool LoadData() = 0;
-    virtual bool UnloadData() = 0;
-    virtual void* GetData() = 0;
-
-    uint32_t GetAssetType() { return m_Id >> MaskStart; }
-};
-
-class AssetArray
-{
-public:
-    std::unordered_map<const char*, AssetID> PathToID{};
-    std::unordered_map<AssetID, Asset*> m_Assets{};
-    uint32_t count = 0;
-    std::list<uint32_t> openIds{};
-    uint32_t mask;
-
-    AssetArray();
-
-    AssetID RegisterAsset(Asset* asset, bool autoLoad);
-
-    bool LoadAsset(Asset* asset);
-    bool LoadAsset(const char* path);
-    bool LoadAsset(AssetID id);
-    
-    void* GetAsset(const char* path);
-    void* GetAsset(AssetID id);
-};
 
 class AssetManager
 {
 public:
-    static std::unordered_map<const char*, std::shared_ptr<AssetArray>> s_AssetsRegister;
+    static std::unordered_map<const char*, std::shared_ptr<IAssetArray>> s_AssetsRegister;
     static std::unordered_map<const char*, uint32_t> s_TypeMask;
+    static std::unordered_map<uint32_t, const char*> s_MaskToName;
     static uint32_t s_TypeCount;
 
     template<typename AssetType>
-    static AssetID RegisterAsset(Asset* asset, bool autoLoad = true)
+    static bool CreateAssetArray()
     {
         auto typeName = typeid(AssetType).name();
-        //create AssetArray if type not does not exist
         auto search = s_AssetsRegister.find(typeName);
-        if (search == s_AssetsRegister.end())
+        if (search != s_AssetsRegister.end())
         {
-            auto assetArray = std::make_shared<AssetArray>();
-            s_AssetsRegister.insert(std::make_pair(typeName, assetArray));
-            assetArray->RegisterAsset(asset, autoLoad);
+            std::cout << "Asset type already registered !" << std::endl;
+            return false;
         }
-        else
-        {
-            search->second->RegisterAsset(asset, autoLoad);
-        }
-        return asset->m_Id;
+        auto mask = RegisterTypeMask<AssetType>();
+        s_AssetsRegister.insert({ typeName, std::make_shared<AssetArray<AssetType>>(mask) });
+        return true;
     }
 
     template<typename AssetType>
-    static AssetID LoadAsset(Asset* asset)
+    static std::shared_ptr<AssetArray<AssetType>> GetAssetArray()
     {
-        auto search = s_AssetsRegister.find();
+        auto typeName = typeid(AssetType).name();
+        return std::static_pointer_cast<AssetArray<AssetType>>(s_AssetsRegister[typeName]);
+    }
+
+    template<typename AssetType>
+    static AssetID RegisterAsset(AssetType* asset, bool autoLoad = true)
+    {
+        auto typeName = typeid(AssetType).name();
+        
+        auto search = s_AssetsRegister.find(typeName);
+        if (search == s_AssetsRegister.end())
+        {
+            std::cout << "Asset type array doesn't exist, please register type before..." << std::endl;
+            return 0;
+        }
+        return search->second->RegisterAsset(asset, autoLoad);
+    }
+
+    template<typename AssetType>
+    static bool LoadAsset(AssetID asset)
+    {
+        auto search = s_AssetsRegister.find(typeid(AssetType));
         if (search == s_AssetsRegister.end())
         {
             assert(false && "Asset type not registered !");
             return 0;
         }
-        search->second.get()->LoadAsset(asset);
-        return asset->m_Id;
-    }
-    
-    template<typename AssetType>
-    static AssetID UnloadAsset(Asset* asset)
-    {
-        
+        return search->second.get()->LoadAsset(asset);
     }
 
     template<typename AssetType>
-    static void* GetAsset(AssetID id)
+    static bool UnloadAsset(AssetID asset)
     {
-        auto search = s_AssetsRegister.find(typeid(AssetType).name());
-        if (search == s_AssetsRegister.end())
-        {
-            assert(false && "Asset type is not registered !");
-            return nullptr;
-        }
-        return (AssetType*)search->second.get()->GetAsset(id);
+        return false;
     }
 
     template<typename AssetType>
-    static void* GetAsset(const char* path)
+    static AssetType* GetAsset(AssetID id)
+    {
+        return GetAssetArray<AssetType>()->GetAsset(id);
+    }
+
+    template<typename AssetType>
+    static AssetBase* GetAsset(const char* path)
     {
         auto search = s_AssetsRegister.find(typeid(AssetType).name());
         if (search == s_AssetsRegister.end())
@@ -114,21 +87,38 @@ public:
             assert(false && "Asset type is not registered !");
             return nullptr;
         }
-        return (AssetType*)search->second.get()->GetAsset(path);
+        return search->second.get()->GetAsset(path);
     }
 
-    template<typename Asset>
+    template<typename AssetType>
     static uint32_t GetTypeMask()
     {
         // search if this type is registered
-        auto typeName = typeid(Asset).name();
+        auto typeName = typeid(AssetType).name();
+        auto type = s_TypeMask.find(typeName);
+        if (type == s_TypeMask.end())
+        {
+            std::cout << "type already registered !" << std::endl;
+            return UINT_MAX;
+        }
+        return type->second;
+    }
+
+    template<typename AssetType>
+    static uint32_t RegisterTypeMask()
+    {
+        auto typeName = typeid(AssetType).name();
         auto type = s_TypeMask.find(typeName);
         if (type != s_TypeMask.end())
+        {
+            std::cout << "type already registered !" << std::endl;
             return type->second;
+        }
         // it's not
         // auto add Type to mask
         s_TypeCount++;
         s_TypeMask.insert({ typeName, s_TypeCount - 1 });
+        s_MaskToName.insert({ s_TypeCount - 1 , typeName });
         return s_TypeCount - 1;
     }
 

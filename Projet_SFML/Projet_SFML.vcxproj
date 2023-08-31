@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnimationReader.cpp" />
+    <ClCompile Include="AssetArray.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Init.cpp" />
@@ -161,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnimationReader.h" />
+    <ClInclude Include="AssetArray.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Definitions.h" />
     <ClInclude Include="Display.h" />

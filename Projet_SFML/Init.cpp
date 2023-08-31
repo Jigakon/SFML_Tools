@@ -29,13 +29,14 @@ void Init(GameData& _gd)
 {
     _gd.window.create(sf::VideoMode(SWIDTH, SHEIGHT), "SFML works!");
     _gd.window.setFramerateLimit(60);
+    auto hasCreatedAssetArray = AssetManager::CreateAssetArray<Texture>();
 
-    auto texID = AssetManager::RegisterAsset<Texture>(new Texture("../Ressources/Images/Link/Bas1.png"));
-    auto texID2 = AssetManager::RegisterAsset<Texture>(new Texture("../Ressources/Images/Link/droite1.png"));
-    auto texture = (Texture*)(AssetManager::GetAsset<Texture>(texID2));
-    _gd.sprites.sprTest.setTexture(*(sf::Texture*)texture->GetData());
+    auto texID = AssetManager::RegisterAsset(new Texture("../Ressources/Images/Link/Bas1.png"));
+    auto texID2 = AssetManager::RegisterAsset(new Texture("../Ressources/Images/Link/droite1.png"));
+
+    auto texture = AssetManager::GetAsset<Texture>(texID2);
+    _gd.sprites.sprTest.setTexture(*texture->GetData());
     _gd.sprites.sprTest.setPosition({ SWIDTH / 2, SHEIGHT / 2 });
-
 
     _gd.textures.tex.loadFromFile("../Ressources/Images/Link/Bas1.png");
     LoadSprite(_gd.sprites.spr, _gd.textures.tex, true);

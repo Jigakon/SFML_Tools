@@ -12,5 +12,7 @@ void Display(GameData& _gd)
 
     _gd.player.Draw(_gd.window);
 
+    _gd.window.draw(_gd.sprites.sprTest);
+
     _gd.window.display();
 }
