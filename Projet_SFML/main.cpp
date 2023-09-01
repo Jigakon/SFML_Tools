@@ -18,7 +18,5 @@ void main()
         Update(gameData);
 
         Display(gameData);
-
-        
     }
 }

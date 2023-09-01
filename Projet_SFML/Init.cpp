@@ -1,5 +1,6 @@
 #include "Init.h"
-#include "AssetManager.h"
+#include "AssetsModule/AssetManager.h"
+#include "Assets.h"
 
 void LoadSprite(sf::Sprite& _spr, sf::Texture& _tex, bool _isCentered)
 {
@@ -29,13 +30,12 @@ void Init(GameData& _gd)
 {
     _gd.window.create(sf::VideoMode(SWIDTH, SHEIGHT), "SFML works!");
     _gd.window.setFramerateLimit(60);
-    auto hasCreatedAssetArray = AssetManager::CreateAssetArray<Texture>();
 
-    auto texID = AssetManager::RegisterAsset(new Texture("../Ressources/Images/Link/Bas1.png"));
-    auto texID2 = AssetManager::RegisterAsset(new Texture("../Ressources/Images/Link/droite1.png"));
+	AssetManager::CreateAssetContainer<Sound>();
+	AssetManager::CreateAssetContainer<Texture>();
 
-    auto texture = AssetManager::GetAsset<Texture>(texID2);
-    _gd.sprites.sprTest.setTexture(*texture->GetData());
+    _gd.testTextureID = AssetManager::RegisterAsset(new Texture("../Ressources/Images/Link/droite1.png"), true);
+
     _gd.sprites.sprTest.setPosition({ SWIDTH / 2, SHEIGHT / 2 });
 
     _gd.textures.tex.loadFromFile("../Ressources/Images/Link/Bas1.png");

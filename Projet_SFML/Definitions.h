@@ -4,6 +4,8 @@
 #include "Headers.h"
 #include "Player.h"
 
+#include "AssetsModule/AssetContainer.h"
+
 #define SWIDTH 1024
 #define SHEIGHT 768
 
@@ -44,6 +46,8 @@ struct GameData
     Player player;
 
     Controls controls;
+
+    AssetID testTextureID;
 
     float dt;
 };
